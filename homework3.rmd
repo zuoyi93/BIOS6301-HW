@@ -1,0 +1,185 @@
+---
+title: 'Bios 6301: Assignment 3'
+output: html_document
+author: Yi Zuo
+---
+
+*Due Thursday, 27 September, 1:00 PM*
+
+50 points total.
+
+Submit a single knitr file (named `homework3.rmd`) by email to coleman.r.harris@vanderbilt.edu.
+Place your R code in between the appropriate chunks for each question.
+Check your output by using the `Knit HTML` button in RStudio.
+
+$5^{n=day}$ points taken off for each day late.
+
+### Question 1 ###
+
+**15 points**
+
+Write a simulation to calculate the power for the following study
+design.  The study has two variables, treatment group and outcome.
+There are two treatment groups (0, 1) and they should be assigned
+randomly with equal probability.  The outcome should be a random normal
+variable with a mean of 60 and standard deviation of 20.  If a patient
+is in the treatment group, add 5 to the outcome.  5 is the true
+treatment effect.  Create a linear model for the outcome by the
+treatment group, and extract the p-value (hint: see assigment1).
+Test if the p-value is less than or equal to the alpha level, which
+should be set to 0.05.
+
+Repeat this procedure 1000 times. The power is calculated by finding
+the percentage of times the p-value is less than or equal to the alpha
+level.  Use the `set.seed` command so that the professor can reproduce
+your results.
+
+1. Find the power when the sample size is 100 patients. (10 points)
+```{r}
+set.seed(1)
+n1.patient<-100
+num.sim<-1e3
+result<-numeric(num.sim)
+f.q1<-function(n.patient,num.sim){
+ for(i in 1:num.sim){
+  trt<-sample(c(0,1),n.patient,replace=T)
+  outcome<-rnorm(n.patient,60,20)
+  data.1<-data.frame(trt,outcome)
+  data.1[data.1$trt==1,"outcome"]<-data.1[data.1$trt==1,"outcome"]+5
+  lm.1<-lm(outcome~trt,data=data.1)
+  result[i]<-coef(summary(lm.1))[2,4]<0.05
+ }
+  return(mean(result))
+}
+f.q1(n1.patient,num.sim)
+```
+
+The power is 0.281 given 100 patients.
+
+1. Find the power when the sample size is 1000 patients. (5 points)
+```{r}
+n2.patient<-1e3
+f.q1(n2.patient,num.sim)
+```
+The power is 0.974 given 1000 patients.
+
+### Question 2 ###
+
+**14 points**
+
+Obtain a copy of the [football-values lecture](https://github.com/couthcommander/football-values).
+Save the `2018/proj_wr18.csv` file in your working directory.  Read
+in the data set and remove the first two columns.
+
+```{r}
+setwd("/Volumes/GoogleDrive/My Drive/Vanderbilt/1st Semester 2018-2019/BIOS6301 IntroStatComp/Homework_YZ/Assignment 3")
+
+q2.data<-read.csv("proj_wr18.csv")
+dim(q2.data)
+q2.data<-q2.data[,c(-1,-2)]
+dim(q2.data)
+```
+
+1. Show the correlation matrix of this data set. (4 points)
+```{r}
+cor(q2.data)
+```
+
+2. Generate a data set with 30 rows that has a similar correlation
+structure.  Repeat the procedure 10,000 times and return the mean
+correlation matrix. (10 points)
+
+```{r}
+library(MASS)
+(rho.q2=cor(q2.data))
+(vcov.q2=var(q2.data))	
+(means.q2=colMeans(q2.data))
+
+keep.2=0
+loops=10000
+
+for (i in 1:loops) {
+      q2.sim = mvrnorm(30, mu = means.q2, Sigma = vcov.q2)
+      keep.2=keep.2+cor(q2.sim)/loops 
+}
+
+keep.2
+```
+The mean correlation matrix is shown above.
+
+
+### Question 3 ###
+
+**21 points**
+
+Here's some code:
+
+```{r}
+nDist <- function(n = 100) {
+    df <- 10
+    prob <- 1/3
+    shape <- 1
+    size <- 16
+    list(
+        beta = rbeta(n, shape1 = 5, shape2 = 45),
+        binomial = rbinom(n, size, prob),
+        chisquared = rchisq(n, df),
+        exponential = rexp(n),
+        f = rf(n, df1 = 11, df2 = 17),
+        gamma = rgamma(n, shape),
+        geometric = rgeom(n, prob),
+        hypergeometric = rhyper(n, m = 50, n = 100, k = 8),
+        lognormal = rlnorm(n),
+        negbinomial = rnbinom(n, size, prob),
+        normal = rnorm(n),
+        poisson = rpois(n, lambda = 25),
+        t = rt(n, df),
+        uniform = runif(n),
+        weibull = rweibull(n, shape)
+    )
+}
+```
+
+1. What does this do? (3 points)
+
+    ```{r}
+    round(sapply(nDist(500), mean), 2)
+    ```
+    
+    ```
+    Generate 500 random numbers from each of those distributions, calculate the sample mean, and round the mean to the two decimal places.
+    ```
+
+1. What about this? (3 points)
+
+    ```{r}
+    sort(apply(replicate(20, round(sapply(nDist(10000), mean), 2)), 1, sd))
+    ```
+    
+    ```
+    Generate 10000 random numbers from each of those distributions, calculate the sample mean, round the mean to the two decimal places, replicate this process for 20 times, calculate the distribution-specific standard deviatins, and sort the standard deviations in the ascending order.
+    ```
+
+  In the output above, a small value would indicate that `N=10,000` would provide a sufficent sample size as to estimate the mean of the distribution. Let's say that a value *less than 0.02* is "close enough".
+
+1. For each distribution, estimate the sample size required to simulate the distribution's mean. (15 points)
+
+Don't worry about being exact. It should already be clear that N < 10,000 for many of the distributions. You don't have to show your work. Put your answer to the right of the vertical bars (`|`) below.
+
+distribution|N
+---|---
+beta|105
+binomial|3510
+chisquared|15385
+exponential|1275
+f|585
+gamma|890
+geometric|5200
+hypergeometric|1375
+lognormal|3730
+negbinomial|124000
+normal|945
+poisson|40500
+t|1505
+uniform|150
+weibull|1555
