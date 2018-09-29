@@ -1,0 +1,185 @@
+---
+title: 'Bios 6301: Assignment 2'
+output: pdf_document
+author: Yi Zuo
+---
+
+*(informally) Due Tuesday, 18 September, 1:00 PM*
+
+50 points total.
+
+This assignment won't be submitted until we've covered Rmarkdown.
+Create R chunks for each question and insert your R code appropriately.
+Check your output by using the `Knit PDF` button in RStudio.
+
+1. **Working with data** In the `datasets` folder on the course GitHub repo, you will find a file called `cancer.csv`, which is a dataset in comma-separated values (csv) format. This is a large cancer incidence dataset that summarizes the incidence of different cancers for various subgroups. (18 points)
+
+    1. Load the data set into R and make it a data frame called `cancer.df`. (2 points)
+```{r}
+setwd("/Volumes/GoogleDrive/My Drive/Vanderbilt/1st Semester 2018-2019/BIOS6301 IntroStatComp/Homework_YZ/Assignment 2")
+
+cancer.df<-read.csv("cancer.csv")
+head(cancer.df)
+
+```
+    2. Determine the number of rows and columns in the data frame. (2)
+```{r}
+dim(cancer.df)
+# 42120 rows and 8 columns
+```
+    3. Extract the names of the columns in `cancer.df`. (2)
+```{r}
+colnames(cancer.df)
+```
+    4. Report the value of the 3000th row in column 6. (2)
+```{r}
+cancer.df[3000,6]
+```
+    5. Report the contents of the 172nd row. (2)
+```{r}
+cancer.df[172,]
+```
+    6. Create a new column that is the incidence *rate* (per 100,000) for each row.(3)
+```{r}
+cancer.df<-within(cancer.df,{rate=incidence/population*100000})
+```
+    7. How many subgroups (rows) have a zero incidence rate? (2)
+```{r}
+nrow(cancer.df[cancer.df$rate==0,])
+```
+    8. Find the subgroup with the highest incidence rate.(3)
+```{r}
+cancer.df[which(cancer.df$rate==max(cancer.df$rate)),]
+```
+
+2. **Data types** (10 points)
+
+    1. Create the following vector: `x <- c("5","12","7")`. Which of the following commands will produce an error message? For each command, Either explain why they should be errors, or explain the non-erroneous result. (4 points)
+
+            max(x): the result would be "7", since x is a character vector, and "7" is the highest first digit among "5", and "1".
+            sort(x): the result would be "12" "5" "7", since x is a character vector, and `sort` would give the ascending order of the vector.
+            sum(x): this would give an error message, since x is a character vector, and can not be summed.
+
+    2. For the next two commands, either explain their results, or why they should produce errors. (3 points)
+
+            y <- c("5",7,12): the result is "5" "7" "12", because numeric value is more flexible than character value, and when they are input together, numeric value is transformed to character value.
+            y[2] + y[3]: this would give you an error, because you can not add the elements in the character vector. 
+
+    3. For the next two commands, either explain their results, or why they should produce errors. (3 points)
+
+            z <- data.frame(z1="5",z2=7,z3=12): this would generate a data frame with three variables of `z1`, `z2`, and `z3`, and their values are `"5"`, `7`, and `12`, respectively.
+            z[1,2] + z[1,3]: this would calculate the sum of the elements in the first row second column, and first row third column, which is 19.
+
+3. **Data structures** Give R expressions that return the following matrices and vectors (*i.e.* do not construct them manually). (3 points each, 12 total)
+
+    1. $(1,2,3,4,5,6,7,8,7,6,5,4,3,2,1)$
+```{r}
+f1<-function(n){
+  c(seq(1,n,1),seq(n-1,1,-1))
+}
+f1(8)
+```
+    2. $(1,2,2,3,3,3,4,4,4,4,5,5,5,5,5)$
+```{r}
+f2<-function(n){
+  output<-NULL
+  for (i in 1:n){
+    output<-c(output,rep(i,i))
+  }
+  return(output)
+}
+f2(5)
+```
+    3. $\begin{pmatrix}
+      0 & 1 & 1  \\
+      1 & 0 & 1  \\
+      1 & 1 & 0  \\
+    \end{pmatrix}$
+```{r}
+f3<-function(n){
+  matrix<-matrix(rep(1,n^2),n,n)
+  for(i in 1:n){
+    matrix[i,i]<-0
+  }
+  return(matrix)
+}
+f3(3)
+```
+    4. $\begin{pmatrix}
+      1 & 2 & 3 & 4 \\
+      1 & 4 & 9 & 16 \\
+      1 & 8 & 27 & 64  \\
+      1 & 16 & 81 & 256 \\
+      1 & 32 & 243 & 1024  \\
+    \end{pmatrix}$
+```{r}
+f4<-function(n){
+  df<-matrix(rep(0,4*n),n,4)
+  for (i in 1:n){
+    df[i,]<-c(1^i,2^i,3^i,4^i)  
+  }
+ return(df)
+}
+f4(5)
+```
+4. **Basic programming** (10 points)
+
+    1. Let $h(x,n)=1+x+x^2+\ldots+x^n = \sum_{i=0}^n x^i$. Write an R program to calculate $h(x,n)$ using a `for` loop. (5 points)
+
+```{r}
+q4.1<-function(x,n){
+  h<-0
+  for (i in 0:n){
+    h<-h+x^i
+  }
+  return(h)
+}
+```
+    2. If we list all the natural numbers below 10 that are multiples of 3 or 5, we get 3, 5, 6 and 9. The sum of these multiples is 23. Write an R program to perform the following calculations. (5 points)
+
+        1. Find the sum of all the multiples of 3 or 5 below 1,000. (3, [euler1])
+```{r}
+sum<-0
+k<-1
+while(T){
+  if (k%%3 == 0 | k%%5 == 0) sum<-sum+k
+  k<-k+1
+  if(k==1000) break
+}
+sum
+```
+        1. Find the sum of all the multiples of 4 or 7 below 1,000,000. (2)
+```{r}
+sum<-0
+k<-1
+while(T){
+  if (k%%4 == 0 | k%%7 == 0) sum<-sum+k
+  k<-k+1
+  if(k==1000000) break
+}
+sum
+```
+    3. Each new term in the Fibonacci sequence is generated by adding the previous two terms. By starting with 1 and 2, the first 10 terms will be $(1, 2, 3, 5, 8, 13, 21, 34, 55, 89)$. Write an R program to calculate the sum of the first 15 even-valued terms. (5 bonus points, [euler2])
+```{r}
+q4.3<-function(m){
+  sum<-2
+  n1<-1
+  n2<-2
+  k<-1
+  while(T){
+  n<-n1+n2
+  if (n%%2==0){
+    sum<-sum+n
+    k<-k+1
+  }
+  n1<-n2
+  n2<-n
+  if (k==m) break}
+  return(sum)
+}
+q4.3(15)
+```
+Some problems taken or inspired by projecteuler.
+
+[euler1]:https://projecteuler.net/problem=1
+[euler2]: https://projecteuler.net/problem=2
