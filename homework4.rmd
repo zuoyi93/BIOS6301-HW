@@ -1,6 +1,6 @@
 ---
 title: 'Bios 6301: Assignment 4'
-author: Yi zUO
+author: Yi Zuo
 output: pdf_document
 ---
 
