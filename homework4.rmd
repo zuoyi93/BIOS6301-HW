@@ -4,6 +4,8 @@ author: Yi Zuo
 output: pdf_document
 ---
 
+###20/20 points, great job Yi!
+
 *Due Tuesday, 09 October, 1:00 PM*
 
 20 points total.
