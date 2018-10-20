@@ -1,12 +1,16 @@
 ---
 title: 'Bios 6301: Assignment 5'
-output: pdf_document
-author: Yi Zuo
+author: "Yi Zuo"
+output:
+  html_document:
+    df_print: paged
 ---
 
 *Due Thursday, 18 October, 1:00 PM*
 
 $5^{n=day}$ points taken off for each day late.
+
+#37/40 Great job Yi!
 
 40 points total.
 
@@ -78,6 +82,7 @@ Newton-Raphson method is faster by 0.014 second after $10^9$ simulation accordin
 
 ![Screenshot](ss.png)
 
+I believe you! Make sure to upload the picture to Github next time. I'll loop back around and check it when you do
 
 ### Question 2 ###
 
@@ -128,6 +133,7 @@ replicate(10,craps())
 
 ```
 
+(-3) While your output is good, and the seed you found correct, you did not provide output that "clearly shows how the game progressed." Something like printing `x` for each roll is useful in seeing game progression!
 
 ### Question 3 ###
 
