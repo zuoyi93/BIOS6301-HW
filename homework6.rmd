@@ -1,0 +1,383 @@
+---
+title: 'Bios 6301: Assignment 6'
+output: html_document
+author: Yi Zuo
+---
+
+*Due Tuesday, 30 October, 1:00 PM*
+
+$5^{n=day}$ points taken off for each day late.
+
+40 points total.
+
+Submit a single knitr file (named `homework6.rmd`), along with a valid PDF output file. Inside the file, clearly indicate which parts of your responses go with which problems (you may use the original homework document as a template). Add your name as `author` to the file's metadata section. Raw R code/output or word processor files are not acceptable.
+
+Failure to name file `homework6.rmd` or include author name may result in 5 points taken off.
+
+### Question 1 ###
+
+**16 points**
+
+Obtain a copy of the [football-values lecture](https://github.com/couthcommander/football-values).  Save the five 2018 CSV files in your working directory.
+
+Modify the code to create a function.  This function will create dollar values given information (as arguments) about a league setup.  It will return a data.frame and write this data.frame to a CSV file.  The final data.frame should contain the columns 'PlayerName', 'pos', 'points', 'value' and be orderd by value descendingly.  Do not round dollar values.
+
+Note that the returned data.frame should have `sum(posReq)*nTeams` rows.
+
+Define the function as such (10 points):
+
+```{r}
+# path: directory path to input files
+# file: name of the output file; it should be written to path
+# nTeams: number of teams in league
+# cap: money available to each team
+# posReq: number of starters for each position
+# points: point allocation for each category
+
+setwd("~/Google Drive File Stream/My Drive/Vanderbilt/1st Semester 2018-2019/BIOS6301 IntroStatComp/Homework_YZ/Assignment 6")
+
+ffvalues <- function(path, file='outfile.csv', nTeams=12, cap=200, posReq=c(qb=1, rb=2, wr=3, te=1, k=1),
+                     points=c(fg=4, xpt=1, pass_yds=1/25, pass_tds=4, pass_ints=-2,
+                              rush_yds=1/10, rush_tds=6, fumbles=-2, rec_yds=1/20, rec_tds=6)) {
+  
+  ## read in CSV files
+  k18 <- read.csv("proj_k18.csv")
+  qb18 <- read.csv("proj_qb18.csv")
+  rb18 <- read.csv("proj_rb18.csv")
+  te18 <- read.csv("proj_te18.csv")
+  wr18 <- read.csv("proj_wr18.csv")  
+  
+  # create the position variable
+  k18$pos <- "k"
+  qb18$pos <- "qb"
+  rb18$pos <- "rb"
+  te18$pos <- "te"
+  wr18$pos <- "wr"
+  
+  # generate unique list of column names
+  cols <- unique(c(names(k18), names(qb18), names(rb18), names(te18), names(wr18)))
+  
+  # create common columns in each data.frame
+  # initialize values to zero
+  k18[,setdiff(cols, names(k18))] <- 0
+  qb18[,setdiff(cols, names(qb18))] <- 0
+  rb18[,setdiff(cols, names(rb18))] <- 0
+  te18[,setdiff(cols, names(te18))] <- 0
+  wr18[,setdiff(cols, names(wr18))] <- 0
+
+  # combine data.frames by row, using consistent column order
+  x <- rbind(k18[,cols], qb18[,cols], rb18[,cols], te18[,cols], wr18[,cols])
+  
+  # convert NFL stat to fantasy points
+  x[,'p_fg'] <- x[,'fg']*points['fg']
+  x[,'p_xpt'] <- x[,'xpt']*points['xpt']
+  x[,'p_pass_yds'] <- x[,'pass_yds']*points['pass_yds']
+  x[,'p_pass_tds'] <- x[,'pass_tds']*points['pass_tds']
+  x[,'p_pass_ints'] <- x[,'pass_ints']*points['pass_ints']
+  x[,'p_rush_yds'] <- x[,'rush_yds']*points['rush_yds']
+  x[,'p_rush_tds'] <- x[,'rush_tds']*points['rush_tds']
+  x[,'p_fumbles'] <- x[,'fumbles']*points['fumbles']
+  x[,'p_rec_yds'] <- x[,'rec_yds']*points['rec_yds']
+  x[,'p_rec_tds'] <- x[,'rec_tds']*points['rec_tds']
+  
+  # this is total fantasy points for each player
+  x[,'points'] <- rowSums(x[,grep("^p_", names(x))])
+
+  # create new data.frame ordered by points descendingly
+  x2 <- x[order(x[,'points'], decreasing=TRUE),]
+  
+  # determine the row indeces for each position
+  k.ix <- which(x2[,'pos']=='k')
+  qb.ix <- which(x2[,'pos']=='qb')
+  rb.ix <- which(x2[,'pos']=='rb')
+  te.ix <- which(x2[,'pos']=='te')
+  wr.ix <- which(x2[,'pos']=='wr')
+  
+  # calculate marginal points by subtracting "baseline" player's points
+  x2[k.ix, 'marg'] <-  x2[k.ix,'points'] - ifelse(nTeams*posReq['k'] == 0, 0,
+    x2[k.ix[nTeams*posReq['k']],'points'])
+  
+  x2[qb.ix, 'marg'] <- x2[qb.ix,'points'] - ifelse(nTeams*posReq['qb'] == 0,  0, x2[qb.ix[nTeams*posReq['qb']],'points'])
+  
+  x2[rb.ix, 'marg'] <- x2[rb.ix,'points'] - ifelse(nTeams*posReq['rb'] == 0, 0, x2[rb.ix[nTeams*posReq['rb']],'points'])
+  
+  x2[te.ix, 'marg'] <- x2[te.ix,'points'] - ifelse(nTeams*posReq['te'] == 0,0 , x2[te.ix[nTeams*posReq['te']],'points'])
+  
+  x2[wr.ix, 'marg'] <- x2[wr.ix,'points'] - ifelse(nTeams*posReq['wr'] == 0, 0,
+    x2[wr.ix[nTeams*posReq['wr']],'points'])
+  
+  # create a new data.frame subset by non-negative marginal points
+  x3 <- x2[x2[,'marg'] >= 0,]
+  # re-order by marginal points
+  x3 <- x3[order(x3[,'marg'], decreasing=TRUE),]
+  # reset the row names
+  rownames(x3) <- NULL
+
+  ## calculate dollar values
+  x3[,'value'] <- x3[,'marg']*(nTeams*cap-nrow(x3))/sum(x3[,'marg']) + 1
+  
+  # create a data.frame with more interesting columns
+  x4 <- x3[,c('PlayerName','pos','points','value')]
+  
+  ## save dollar values as CSV file
+  write.csv(x4, file=file)
+  
+  ## return data.frame with dollar values
+  return(x4)
+
+}
+```
+
+1. Call `x1 <- ffvalues('.')`
+
+    1.  How many players are worth more than $20? (1 point)
+    
+    ```{r}
+    x1 <- ffvalues('.')
+    sum(x1$value>20)
+    ```
+    
+    <span style="color:orange"> So, there are 43 players who are worth more than $20.</span>
+    
+    
+    1.  Who is 15th most valuable running back (rb)? (1 point)
+    
+    ```{r}
+    rbdata <- x1[x1$pos=="rb",]
+    rbdata[order(rbdata$value,decreasing = T),][15,]
+    ```
+
+   
+    <span style="color:orange"> Derrick Henry is the 15th most valuable running back. </span>
+
+1. Call `x2 <- ffvalues(getwd(), '16team.csv', nTeams=16, cap=150)`
+
+    1.  How many players are worth more than $20? (1 point)
+    ```{r}
+    x2 <- ffvalues(getwd(), '16team.csv', nTeams=16, cap=150)
+    sum(x2$value>20)
+    ```
+    
+    <span style="color:orange"> So, there are 43 players who are worth more than $20. </span>
+    
+    1.  How many wide receivers (wr) are in the top 40? (1 point)
+    ```{r}
+    table(x2[1:40,"pos"])
+    ```
+    
+    <span style="color:orange"> There are 11 wide receivers in the top 40. </span>
+    
+1. Call:
+
+    ```{r eval=T}
+    x3 <- ffvalues('.', 'qbheavy.csv', posReq=c(qb=2, rb=2, wr=3, te=1, k=0),
+            points=c(fg=0, xpt=0, pass_yds=1/25, pass_tds=6, pass_ints=-2,
+                    rush_yds=1/10, rush_tds=6, fumbles=-2, rec_yds=1/20, rec_tds=6))
+    ```
+
+    1.  How many players are worth more than $20? (1 point)
+    ```{r}
+    sum(x3$value>20)
+    ```
+    
+    <span style="color:orange"> So, there are 47 players who are worth more than $20. </span>
+    
+    1.  How many quarterbacks (qb) are in the top 30? (1 point)
+    ```{r}
+     table(x3[1:30,"pos"])
+    
+    ```
+    
+    <span style="color:orange"> There are 13 quarterbacks in the top 30. </span>
+    
+### Question 2 ###
+
+**24 points**
+
+Import the HAART dataset (`haart.csv`) from the GitHub repository into R, and perform the following manipulations: (4 points each)
+
+1. Convert date columns into a usable (for analysis) format.  Use the `table` command to display the counts of the year from `init.date`.
+
+```{r}
+
+haart <- read.csv("haart.csv")
+head(haart)
+
+haart$init.date <- as.Date(haart$init.date, format="%m/%d/%y") 
+haart$last.visit <- as.Date(haart$last.visit, format="%m/%d/%y") 
+haart$date.death <- as.Date(haart$date.death, format="%m/%d/%y") 
+
+library(lubridate)
+table(year(haart$init.date))
+
+```
+
+2. Create an indicator variable (one which takes the values 0 or 1 only) to represent death within 1 year of the initial visit.  How many observations died in year 1?
+
+```{r}
+haart$death_1yr <- +(haart$date.death-haart$init.date<=365)
+table(haart$death_1yr )
+```
+
+  <span style="color:orange"> 92 observations died in year 1. </span>
+
+3. Use the `init.date`, `last.visit` and `death.date` columns to calculate a followup time (in days), which is the difference between the first and either the last visit or a death event (whichever comes first). If these times are longer than 1 year, censor them (this means if the value is above 365, set followup to 365).  Print the quantile for this new variable. 
+
+```{r}
+sum(is.na(haart$last.visit)) # 11
+sum(is.na(haart$date.death)) # 883
+sum(is.na(haart$init.date)) # 0
+
+# find the index 
+
+# both date.death and last.visit are available, and last.visit is earlier
+ix_last_death <- haart$last.visit < haart$date.death & !is.na(haart$date.death) & !is.na(haart$last.visit)
+
+# both date.death and last.visit are available, and date.death is earlier or the same day
+ix_death_last <- haart$last.visit >= haart$date.death & !is.na(haart$date.death) & !is.na(haart$last.visit)
+sum(ix_death_last) # 67
+
+# only death date is available
+ix_death <- !is.na(haart$date.death) & is.na(haart$last.visit)
+sum(ix_death) # 11
+
+# only last date is available
+ix_last <- is.na(haart$date.death) & !is.na(haart$last.visit)
+sum(ix_last) # 883 
+
+# generate followup variable 
+haart[ix_last_death,"followup"] <- haart[ix_last_death,"last.visit"]-haart[ix_last_death,"init.date"]
+
+haart[ix_death_last,"followup"] <- haart[ix_death_last,"date.death"]-haart[ix_death_last,"init.date"]
+
+haart[ix_death,"followup"] <- haart[ix_death,"date.death"]-haart[ix_death,"init.date"]
+
+haart[ix_last,"followup"] <- haart[ix_last,"last.visit"]-haart[ix_last,"init.date"]
+
+# no missing followup
+sum(is.na(haart$followup))
+
+# censor at 1 year
+haart$followup[haart$followup >= 365] <- 365
+
+quantile(haart$followup)
+```
+
+4. Create another indicator variable representing loss to followup; this means the observation is not known to be dead but does not have any followup visits after the first year.  How many records are lost-to-followup? 
+
+```{r}
+ix_q4 <- is.na(haart$date.death) & (haart$last.visit - haart$init.date <= 365)
+sum(ix_q4)
+
+haart$lossfu<- +ix_q4
+table(haart$lossfu)
+
+```
+
+<span style="color:orange"> 173 observations are lost to follow up. </span>
+
+5. Recall our work in class, which separated the `init.reg` field into a set of indicator variables, one for each unique drug. Create these fields and append them to the database as new columns.  Which drug regimen are found over 100 times? 
+
+```{r}
+
+init.reg <- as.character(haart[,'init.reg'])
+haart[['init.reg_list2']] <- strsplit(init.reg, ",")
+
+all_drugs <- unique(unlist(haart$init.reg_list2))
+
+reg_drugs <- matrix(FALSE, nrow=nrow(haart), ncol=length(all_drugs))
+for(i in seq_along(all_drugs)) {
+  reg_drugs[,i] <- sapply(haart$init.reg_list2, function(x) all_drugs[i] %in% x)
+}
+reg_drugs <- data.frame(reg_drugs)
+names(reg_drugs) <- all_drugs
+head(reg_drugs)
+
+haart_merged <- cbind(haart, reg_drugs)
+head(haart_merged)
+
+colnames(reg_drugs[colSums(reg_drugs)>100])
+
+```
+
+<span style="color:orange"> "3TC" "AZT" "EFV" "NVP" "D4T" are found over 100 times. </span>
+
+6. The dataset `haart2.csv` contains a few additional observations for the same study. Import these and append them to your master dataset (if you were smart about how you coded the previous steps, cleaning the additional observations should be easy!).  Show the first five records and the last five records of the complete (and clean) data set.
+
+```{r}
+
+haart <- read.csv("haart.csv")
+haart2 <- read.csv("haart2.csv")
+
+dim(haart2)
+head(haart2)
+sum(colnames(haart2) %in% colnames(haart)) == ncol(haart2)
+
+haart2$init.date <- as.Date(haart2$init.date, format="%m/%d/%y") 
+haart2$last.visit <- as.Date(haart2$last.visit, format="%m/%d/%y") 
+haart2$date.death <- as.Date(haart2$date.death, format="%m/%d/%y") 
+
+haart2$death_1yr <- +(haart2$date.death-haart2$init.date<=365)
+
+# both date.death and last.visit are available, and last.visit is earlier
+ix_last_death <- haart2$last.visit < haart2$date.death & !is.na(haart2$date.death) & !is.na(haart2$last.visit)
+
+# both date.death and last.visit are available, and date.death is earlier or the same day
+ix_death_last <- haart2$last.visit >= haart2$date.death & !is.na(haart2$date.death) & !is.na(haart2$last.visit)
+sum(ix_death_last) # 0
+
+# only death date is available
+ix_death <- !is.na(haart2$date.death) & is.na(haart2$last.visit)
+sum(ix_death) # 0
+
+# only last date is available
+ix_last <- is.na(haart2$date.death) & !is.na(haart2$last.visit)
+sum(ix_last) # 4
+
+# generate followup variable 
+haart2[ix_last_death,"followup"] <- haart2[ix_last_death,"last.visit"]-haart2[ix_last_death,"init.date"]
+
+haart2[ix_death_last,"followup"] <- haart2[ix_death_last,"date.death"]-haart2[ix_death_last,"init.date"]
+
+haart2[ix_death,"followup"] <- haart2[ix_death,"date.death"]-haart2[ix_death,"init.date"]
+
+haart2[ix_last,"followup"] <- haart2[ix_last,"last.visit"]-haart2[ix_last,"init.date"]
+
+# no missing followup
+sum(is.na(haart2$followup))
+
+# censor at 1 year
+haart2$followup[haart2$followup >= 365] <- 365
+
+ix_q4 <- is.na(haart2$date.death) & (haart2$last.visit - haart2$init.date <= 365)
+sum(ix_q4)
+
+haart2$lossfu<- +ix_q4
+table(haart2$lossfu)
+
+# drug
+init.reg <- as.character(haart2[,'init.reg'])
+(haart2[['init.reg_list2']] <- strsplit(init.reg, ","))
+
+reg_drugs <- matrix(FALSE, nrow=nrow(haart2), ncol=length(all_drugs))
+for(i in seq_along(all_drugs)) {
+  reg_drugs[,i] <- sapply(haart2$init.reg_list, function(x) all_drugs[i] %in% x)
+}
+reg_drugs <- data.frame(reg_drugs)
+names(reg_drugs) <- all_drugs
+head(reg_drugs)
+
+haart2_merged <- cbind(haart2, reg_drugs)
+head(haart2_merged)
+
+sum(colnames(haart_merged) %in% colnames(haart2_merged)) == ncol(haart_merged)
+
+```
+
+```{r}
+final_haart <- rbind(haart_merged,haart2_merged)
+
+head(final_haart,5)
+tail(final_haart,5)
+
+```
