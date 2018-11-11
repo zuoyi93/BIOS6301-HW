@@ -1,0 +1,237 @@
+---
+title: 'Bios 6301: Assignment 7'
+output: pdf_document
+author: Yi Zuo
+---
+
+*Due Thursday, 08 November, 1:00 PM*
+
+$5^{n=day}$ points taken off for each day late.
+
+40 points total.
+
+Submit a single knitr file (named `homework7.rmd`), along with a valid PDF output file. Inside the file, clearly indicate which parts of your responses go with which problems (you may use the original homework document as a template). Add your name as `author` to the file's metadata section. Raw R code/output or word processor files are not acceptable.
+
+Failure to name file `homework7.rmd` or include author name may result in 5 points taken off.
+
+### Question 1 ###
+
+**21 points**
+
+Use the following code to generate data for patients with repeated measures of A1C (a test for levels of blood glucose).
+
+```{r}
+genData <- function(n) {
+    if(exists(".Random.seed", envir = .GlobalEnv)) {
+        save.seed <- get(".Random.seed", envir= .GlobalEnv)
+        on.exit(assign(".Random.seed", save.seed, envir = .GlobalEnv))
+    } else {
+        on.exit(rm(".Random.seed", envir = .GlobalEnv))
+    }
+    set.seed(n)
+    subj <- ceiling(n / 10)
+    id <- sample(subj, n, replace=TRUE)
+    times <- as.integer(difftime(as.POSIXct("2005-01-01"), as.POSIXct("2000-01-01"), units='secs'))
+    dt <- as.POSIXct(sample(times, n), origin='2000-01-01')
+    mu <- runif(subj, 4, 10)
+    a1c <- unsplit(mapply(rnorm, tabulate(id), mu, SIMPLIFY=FALSE), id)
+    data.frame(id, dt, a1c)
+}
+x <- genData(500)
+```
+
+Perform the following manipulations: (3 points each)
+
+1. Order the data set by `id` and `dt`.
+
+```{r}
+x1 <- x[order(x$id,x$dt),]
+head(x1)
+```
+
+<span style="color:orange"> `x1` is the data set ordered by `id` and `dt`. </span>
+
+2. For each `id`, determine if there is more than a one year gap in between observations.  Add a new row at the one year mark, with the `a1c` value set to missing.  A two year gap would require two new rows, and so forth.
+
+```{r}
+
+f2 <- function(x1){
+  
+  x1_first_v_time <- x1[!duplicated(x1$id),'dt']
+
+  x1_last_v_time <- as.POSIXct(as.vector(with(x1, tapply(dt, id, function(x) x[length(x)]))),origin='1970-01-01')
+
+  x1_gap <- floor(as.numeric(difftime(x1_last_v_time,x1_first_v_time,units="days")/365))
+  
+  # create the appended data set
+  x1_mark_id <- unlist(sapply(unique(x1$id),function(x){rep(x,x1_gap[x])}))
+  x1_mark_index <- unlist(sapply(unique(x1$id),function(x){seq(x1_gap[x])}))
+  
+  x1_mark_dt<-numeric(length(x1_mark_id))
+  for(i in seq_along(x1_mark_id) ){
+    x1_mark_dt[i] <- x1_first_v_time[x1_mark_id[i]] + 365 * 86400 * x1_mark_index[i]
+  }
+  
+  x1_mark_dt <- as.POSIXct(x1_mark_dt,origin='1970-01-01')
+  
+  x1_mark <- data.frame(id=x1_mark_id, dt=x1_mark_dt, a1c=NA)
+  
+  x2 <- rbind(x1,x1_mark)
+  x2 <- x2[order(x2$id, x2$dt),]
+  rownames(x2) <- NULL
+  return(x2)
+}
+
+x2 <- f2(x1)
+
+```
+
+<span style="color:orange"> Data set `x2` is the new data set with added rows. </span>
+
+3. Create a new column `visit`.  For each `id`, add the visit number.  This should be 1 to `n` where `n` is the number of observations for an individual.  This should include the observations created with missing a1c values.
+
+```{r}
+
+f3 <- function(x2){
+  x2$visit <- unlist(sapply(tabulate(x2$id),function(x){seq(x)}))
+  return(x2)
+}
+
+x3 <- f3(x2)
+
+```
+
+<span style="color:orange"> `x3` is the new data set with new variable `viist`. </span>
+
+4. For each `id`, replace missing values with the mean `a1c` value for that individual.
+
+```{r}
+
+f4 <- function(x3){
+  x3_mean_a1c <- as.numeric(tapply(x3$a1c, x3$id, function(x) mean(x,na.rm=T)))
+  
+  for(i in seq_along(x3_mean_a1c)){
+   index <- which(x3$id == i)
+   x3[index[is.na(x3[index,'a1c'])], 'a1c'] <- x3_mean_a1c[i]
+  }
+  
+  return(x3)
+}
+
+x4 <- f4(x3)
+```
+
+<span style="color:orange"> `x4` is the new data set without missing a1c. </span>
+
+5. Print mean `a1c` for each `id`.
+
+```{r}
+
+tapply(x4$a1c, x4$id, mean)
+
+```
+
+
+6. Print total number of visits for each `id`.
+
+```{r}
+tapply(x4$visit, x4$id, max)
+```
+
+7. Print the observations for `id = 15`.
+
+```{r}
+x4[x4$id == 15,]
+```
+
+### Question 2 ###
+
+**16 points**
+
+Import the `addr.txt` file from the GitHub repository.  This file contains a listing of names and addresses (thanks google).  Parse each line to create a data.frame with the following columns: lastname, firstname, streetno, streetname, city, state, zip.  Keep middle initials or abbreviated names in the firstname column.  Print out the entire data.frame.
+
+```{r}
+setwd("/Volumes/GoogleDrive/My Drive/Vanderbilt/1st Semester 2018-2019/BIOS6301 IntroStatComp/Homework_YZ/Assignment 7")
+
+library(readr)
+addr <- readLines("addr.txt")
+
+head(addr)
+length(addr)
+
+# split the string
+addr_split <- strsplit(addr,"  ")
+
+# get the index of the empty string
+addr_list_index <- lapply(addr_split,function(x) x != "")
+
+# remove the empty string in the list
+addr_noempty_list <- sapply(1:length(addr_list_index), function(x) addr_split[[x]] <- addr_split[[x]][addr_list_index[[x]]])
+
+# remove the space in the string
+addr_nospace_list <- trimws(addr_noempty_list)
+
+# extract the elements
+lastname <- sapply(1:length(addr_list_index), function(x) addr_nospace_list[1,x])
+firstname <- sapply(1:length(addr_list_index), function(x) addr_nospace_list[2,x])
+street <- sapply(1:length(addr_list_index), function(x) addr_nospace_list[3,x])
+streetno <- sub(" .*","",street) 
+streetname <- sub("^\\S+\\s+","",street) 
+city <- sapply(1:length(addr_list_index), function(x) addr_nospace_list[4,x])
+state <- sapply(1:length(addr_list_index), function(x) addr_nospace_list[5,x])
+zip <- sapply(1:length(addr_list_index), function(x) addr_nospace_list[6,x])
+
+(data <- data.frame(lastname, firstname, streetno, streetname, city, state, zip))
+```
+
+
+### Question 3 ###
+
+**3 points**
+
+The first argument to most functions that fit linear models are formulas.  The following example defines the response variable `death` and allows the model to incorporate all other variables as terms. `.` is used to mean all columns not otherwise in the formula.
+
+```{r}
+url <- "https://github.com/fonnesbeck/Bios6301/raw/master/datasets/haart.csv"
+haart_df <- read.csv(url)[,c('death','weight','hemoglobin','cd4baseline')]
+coef(summary(glm(death ~ ., data=haart_df, family=binomial(logit))))
+```
+
+Now imagine running the above several times, but with a different response and data set each time.  Here's a function:
+
+```{r}
+myfun <- function(dat, response) {
+  form <- as.formula(response ~ .)
+  coef(summary(glm(form, data=dat, family=binomial(logit))))
+}
+```
+
+Unfortunately, it doesn't work. `tryCatch` is "catching" the error so that this file can be knit to PDF.
+
+```{r}
+tryCatch(myfun(haart_df, death), error = function(e) e)
+```
+
+What do you think is going on?  Consider using `debug` to trace the problem.
+
+```{r,eval=FALSE}
+debugonce(myfun)
+myfun(haart_df, death)
+traceback()
+```
+
+<span style="color:orange"> The reason why the function didn't work is that the response variable `death` couldn't be passed to the function since it's not defined in the global environment. </span>
+
+**5 bonus points**
+
+Create a working function.
+
+```{r}
+myfun <- function(dat, response) {
+  form <- as.formula(paste(response, "~","." ))
+  coef(summary(glm(form, data=dat, family=binomial(logit))))
+}
+
+myfun(haart_df, "death")
+
+```
