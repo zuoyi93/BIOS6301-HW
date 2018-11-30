@@ -4,6 +4,8 @@ output: html_document
 author: Yi Zuo
 ---
 
+#40/40, Great job! Love the orange too. - cole h.
+
 *Due Tuesday, 30 October, 1:00 PM*
 
 $5^{n=day}$ points taken off for each day late.
@@ -34,18 +36,18 @@ Define the function as such (10 points):
 # posReq: number of starters for each position
 # points: point allocation for each category
 
-setwd("~/Google Drive File Stream/My Drive/Vanderbilt/1st Semester 2018-2019/BIOS6301 IntroStatComp/Homework_YZ/Assignment 6")
+#setwd("~/Google Drive File Stream/My Drive/Vanderbilt/1st Semester 2018-2019/BIOS6301 IntroStatComp/Homework_YZ/Assignment 6")
 
 ffvalues <- function(path, file='outfile.csv', nTeams=12, cap=200, posReq=c(qb=1, rb=2, wr=3, te=1, k=1),
                      points=c(fg=4, xpt=1, pass_yds=1/25, pass_tds=4, pass_ints=-2,
                               rush_yds=1/10, rush_tds=6, fumbles=-2, rec_yds=1/20, rec_tds=6)) {
   
   ## read in CSV files
-  k18 <- read.csv("proj_k18.csv")
-  qb18 <- read.csv("proj_qb18.csv")
-  rb18 <- read.csv("proj_rb18.csv")
-  te18 <- read.csv("proj_te18.csv")
-  wr18 <- read.csv("proj_wr18.csv")  
+  k18 <- read.csv("../../2018/proj_k18.csv")
+  qb18 <- read.csv("../../2018/proj_qb18.csv")
+  rb18 <- read.csv("../../2018/proj_rb18.csv")
+  te18 <- read.csv("../../2018/proj_te18.csv")
+  wr18 <- read.csv("../../2018/proj_wr18.csv")  
   
   # create the position variable
   k18$pos <- "k"
@@ -200,7 +202,7 @@ Import the HAART dataset (`haart.csv`) from the GitHub repository into R, and pe
 
 ```{r}
 
-haart <- read.csv("haart.csv")
+haart <- read.csv("../../2018/haart.csv")
 head(haart)
 
 haart$init.date <- as.Date(haart$init.date, format="%m/%d/%y") 
@@ -306,8 +308,8 @@ colnames(reg_drugs[colSums(reg_drugs)>100])
 
 ```{r}
 
-haart <- read.csv("haart.csv")
-haart2 <- read.csv("haart2.csv")
+haart <- read.csv("../../2018/haart.csv")
+haart2 <- read.csv("../../2018/haart2.csv")
 
 dim(haart2)
 head(haart2)

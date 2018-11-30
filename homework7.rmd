@@ -1,8 +1,12 @@
 ---
 title: 'Bios 6301: Assignment 7'
-output: pdf_document
-author: Yi Zuo
+author: "Yi Zuo"
+output:
+  html_document:
+    df_print: paged
 ---
+
+(41/40) Great job Yi! - Cole h
 
 *Due Thursday, 08 November, 1:00 PM*
 
@@ -52,6 +56,7 @@ head(x1)
 <span style="color:orange"> `x1` is the data set ordered by `id` and `dt`. </span>
 
 2. For each `id`, determine if there is more than a one year gap in between observations.  Add a new row at the one year mark, with the `a1c` value set to missing.  A two year gap would require two new rows, and so forth.
+(-2) See comment at the end of Q1.
 
 ```{r}
 
@@ -133,16 +138,21 @@ tapply(x4$a1c, x4$id, mean)
 
 
 6. Print total number of visits for each `id`.
+(-1) See below.
 
 ```{r}
 tapply(x4$visit, x4$id, max)
 ```
 
 7. Print the observations for `id = 15`.
+(-1) See below.
 
 ```{r}
 x4[x4$id == 15,]
 ```
+
+
+(-4 total) I'm not entirely sure what you did, but it looks like you added too many observations for each id. Your visit counts are higher than they should be, for instance, id:15 should only have visited 8 times. Your visit #4 is only 5 days after the time before it, so you might be adding things too early. Feel free to ask me questions about this!
 
 ### Question 2 ###
 
@@ -151,10 +161,10 @@ x4[x4$id == 15,]
 Import the `addr.txt` file from the GitHub repository.  This file contains a listing of names and addresses (thanks google).  Parse each line to create a data.frame with the following columns: lastname, firstname, streetno, streetname, city, state, zip.  Keep middle initials or abbreviated names in the firstname column.  Print out the entire data.frame.
 
 ```{r}
-setwd("/Volumes/GoogleDrive/My Drive/Vanderbilt/1st Semester 2018-2019/BIOS6301 IntroStatComp/Homework_YZ/Assignment 7")
+#setwd("/Volumes/GoogleDrive/My Drive/Vanderbilt/1st Semester 2018-2019/BIOS6301 IntroStatComp/Homework_YZ/Assignment 7")
 
 library(readr)
-addr <- readLines("addr.txt")
+addr <- readLines("../../../addr.txt")
 
 head(addr)
 length(addr)
@@ -223,6 +233,8 @@ traceback()
 <span style="color:orange"> The reason why the function didn't work is that the response variable `death` couldn't be passed to the function since it's not defined in the global environment. </span>
 
 **5 bonus points**
+
+(+5) Great job!
 
 Create a working function.
 

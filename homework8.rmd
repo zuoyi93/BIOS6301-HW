@@ -1,8 +1,12 @@
 ---
 title: 'Bios 6301: Assignment 6'
-output: pdf_document
-author: Yi Zuo
+author: "Yi Zuo"
+output:
+  html_document:
+    df_print: paged
 ---
+
+28/30 Good job Yi! - cole h.
 
 *Due Thursday, 15 November, 1:00 PM*
 
@@ -51,6 +55,8 @@ methods(class = class(dat)[3])
 ```
 
 <span style="color:orange"> The default print method is dispatched. </span>
+
+(-1) It's actually not necessarily the default print method. Consider that  the first method available for the object is `tbl_df`, and there exists a `print.tbl_df` method that will be dispatched.
 
 4. Set the class of `dat` to be a data.frame. (1 point)
 
@@ -148,6 +154,8 @@ mr
 
 
 2. Write a `medicalRecord` method for the generic function `mean`, which returns averages for pulse, temperature and fluids. Also write a `medicalRecord` method for `print`, which employs some nice formatting, perhaps arranging measurements by date, and `plot`, that generates a composite plot of measurements over time.  Call each function for the medical record created in part 1. (5 points)
+
+(-1) You probably should plotting all three values of temperature, fluid intake, and pulse on the same graph unless the units are all related in some unusual way, or there's some relationship you are interested in. These values all are measured in quite distinct units, and in a visualization and interpretation sense, should not be present on the same graph (see for instance that you cannot observe much variability in fluid intake since it's on an improper scale, but would on its own scale).
 
 ```{r}
 

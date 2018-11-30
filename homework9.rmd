@@ -1,12 +1,16 @@
 ---
 title: 'Bios 6301: Assignment 9'
-output: pdf_document
-author: Yi Zuo
+author: "Yi Zuo"
+output:
+  html_document:
+    df_print: paged
 ---
 
 *Due Thursday, 29 November, 1:00 PM*
 
 $5^{n=day}$ points taken off for each day late.
+
+40/40 excellent job Yi! - cole h.
 
 40 points total.
 
@@ -71,7 +75,7 @@ dev.off()
 
 Use the simulated results from question 1 to reproduce (as closely as possible) the following plot in ggplot2.
 
-![Generations plot](a4q1.png)
+
 
 ```{r}
 library(ggplot2)
@@ -145,7 +149,7 @@ ggplot(gg.data, aes(x=index,y=Outcome,group=Group)) + geom_line(aes(color=Group)
 ```
 
 
-![bp interval plot](bpi.jpg)
+
 
 Here's an example of how you could create transparent shaded areas.
 
